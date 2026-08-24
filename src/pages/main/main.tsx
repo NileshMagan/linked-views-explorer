@@ -1,4 +1,4 @@
-import React, { useCallback, useState, type FC } from "react";
+import { useCallback, useState, type FC } from "react";
 
 import Canvas from "../../components/canvas/canvas.container";
 import Table from "../../components/table/table.container";

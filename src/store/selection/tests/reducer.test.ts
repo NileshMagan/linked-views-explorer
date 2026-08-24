@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import selectionReducer, { initialState } from "../reducer";
 import { clearSelection, setSelectedFindingId } from "../actions";
 import { NO_SELECTION, type SelectionState } from "../types";

@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { clearSelection, setSelectedFinding, setSelectedFindingId } from "../actions";
 import { CLEAR_SELECTION, SET_SELECTED_FINDING } from "../actionTypes";
 

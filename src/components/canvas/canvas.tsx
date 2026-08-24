@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useRef, useState, type FC } from "react";
 import { fabric } from "fabric";
 
 import {

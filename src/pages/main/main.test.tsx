@@ -1,4 +1,5 @@
-import React from "react";
+import { describe, expect, it, vi } from "vitest";
+
 import { HttpResponse, http } from "msw";
 import { fireEvent, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 
@@ -14,12 +15,14 @@ import { makeTestQueryClient, renderWithProviders } from "../../test/test-utils"
  * would make this file fail for reasons that have nothing to do with the
  * decision being tested.
  */
-jest.mock("../../components/canvas/canvas.container", () => () => (
-  <div data-testid="canvas" />
-));
-jest.mock("../../components/table/table.container", () => () => (
-  <div data-testid="table" />
-));
+// These are ES modules, so the factory has to return the module shape — a
+// bare component would leave the import undefined.
+vi.mock("../../components/canvas/canvas.container", () => ({
+  default: () => <div data-testid="canvas" />,
+}));
+vi.mock("../../components/table/table.container", () => ({
+  default: () => <div data-testid="table" />,
+}));
 
 const renderMain = (options = {}) =>
   renderWithProviders(<MainContainer />, {

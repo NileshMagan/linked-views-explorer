@@ -56,7 +56,7 @@ export const handlers = [
 
     // A little latency, so loading and keep-previous-data states are real in
     // the browser rather than theoretical.
-    await delay(process.env.NODE_ENV === "test" ? 0 : 300);
+    await delay(import.meta.env.MODE === "test" ? 0 : 300);
 
     const start = (page - 1) * pageSize;
 

@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { getSelectedFindingIdSelector } from "../selectors";
 import { initialState } from "../reducer";
 import { NO_SELECTION } from "../types";

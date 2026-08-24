@@ -1,4 +1,5 @@
-import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+
 import { render, screen } from "@testing-library/react";
 
 import ErrorBoundary from "./error-boundary";
@@ -8,16 +9,21 @@ const Boom = (): JSX.Element => {
 };
 
 describe("ErrorBoundary", () => {
-  // React logs caught render errors to the console; silence it so a passing
-  // suite is not full of red that means nothing.
-  let consoleError: jest.SpyInstance;
+  // These tests throw on purpose. React logs caught render errors to the
+  // console and jsdom re-reports them as uncaught window errors, so a passing
+  // suite would be full of red that means nothing. Both are silenced only for
+  // the duration of this file.
+  let consoleError: MockInstance;
+  const swallow = (event: Event) => event.preventDefault();
 
   beforeEach(() => {
-    consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    window.addEventListener("error", swallow);
   });
 
   afterEach(() => {
     consoleError.mockRestore();
+    window.removeEventListener("error", swallow);
   });
 
   it("renders its children while nothing has thrown", () => {
@@ -53,7 +59,7 @@ describe("ErrorBoundary", () => {
   });
 
   it("reports the error so a real deployment can log it", () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
 
     render(
       <ErrorBoundary onError={onError}>

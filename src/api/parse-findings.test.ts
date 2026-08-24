@@ -1,12 +1,11 @@
-import {
-  parseFinding,
-  parseFindings,
-  toFiniteNumber,
-} from "./parse-findings";
+import { describe, expect, it } from "vitest";
+import { parseFinding, parseFindings } from "./parse-findings";
 import {
   FINDING_ABSOLUTE_TYPE,
   FINDING_RADIAL_TYPE,
+  toFiniteNumber,
 } from "../data-structures/data";
+import payload from "../mocks/findings-db.json";
 
 describe("toFiniteNumber", () => {
   it("passes numbers through", () => {
@@ -192,8 +191,6 @@ describe("parseFindings", () => {
   it("parses the fixture the mock API serves", () => {
     // Guards the whole pipeline against a change to the dataset that the unit
     // cases above would not notice.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const payload = require("../mocks/findings-db.json");
     const findings = parseFindings(payload);
 
     // The fixture holds 26 rows with four deliberate defects, but only three

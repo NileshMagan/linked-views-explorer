@@ -8,7 +8,7 @@
  * and let each test override only what it is testing.
  */
 
-import React, { type ReactElement, type ReactNode } from "react";
+import { type ReactElement, type ReactNode } from "react";
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, type Store } from "redux";

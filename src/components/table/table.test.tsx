@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
@@ -16,7 +17,7 @@ const findings = [
 ];
 
 const renderTable = (props: Partial<React.ComponentProps<typeof Table>> = {}) => {
-  const onFindingHover = jest.fn();
+  const onFindingHover = vi.fn();
   const result = render(
     <Table
       findings={findings}

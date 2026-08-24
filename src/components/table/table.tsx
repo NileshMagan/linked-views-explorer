@@ -1,4 +1,4 @@
-import React, { type FC } from "react";
+import { type FC } from "react";
 import classnames from "classnames";
 
 import "./table.scss";

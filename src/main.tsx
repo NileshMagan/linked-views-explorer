@@ -26,7 +26,7 @@ const startMockApi = async () => {
   await worker.start({
     onUnhandledRequest: "bypass",
     // Resolves correctly when the app is served from a sub-path.
-    serviceWorker: { url: `${process.env.PUBLIC_URL || ""}/mockServiceWorker.js` },
+    serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   });
 };
 

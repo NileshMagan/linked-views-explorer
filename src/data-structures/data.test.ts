@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { findFindingById, isRadialFinding } from "./data";
 import { NO_SELECTION } from "../store/selection/types";
 import { makeAbsoluteFinding, makeRadialFinding } from "../test/test-utils";

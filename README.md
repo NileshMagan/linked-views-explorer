@@ -16,7 +16,8 @@ written down with the reasoning, because a choice you cannot justify is not a
 standard.
 
 ```
-135 tests · 15 suites · 98.9% statements · 100% functions
+React 18 · TypeScript · Vite · Vitest · TanStack Query · Redux · zod · MSW
+135 tests · 15 suites · 98.2% statements · 100% functions
 ```
 
 ## What it does
@@ -42,15 +43,19 @@ deleting `src/mocks`.
 
 ```bash
 npm install
-npm start          # http://localhost:3000
+npm run dev        # http://localhost:3000
 ```
+
+No `--legacy-peer-deps`, no overrides, no postinstall patching.
 
 | Script | Does |
 | --- | --- |
-| `npm start` | Development server |
-| `npm run build` | Production build |
+| `npm run dev` | Development server |
+| `npm run build` | Typecheck, then production build |
+| `npm run preview` | Serve the production build |
 | `npm test` | Runs the suite once |
 | `npm run test:watch` | Re-runs on change |
+| `npm run test:ui` | Vitest's browser UI |
 | `npm run test:coverage` | Coverage against the 90% threshold |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run verify` | Typecheck + tests — what CI would run |
@@ -66,11 +71,11 @@ src/
 ├── api/                  the network boundary — the only place HTTP exists
 │   ├── findings-api.ts   builds the request, normalises every failure
 │   ├── api-error.ts      the one error type, and the retry policy
-│   ├── parse-findings.ts payload → domain model (pure)
+│   ├── parse-findings.ts applies the schemas, drops what it cannot render
 │   ├── use-findings.ts   React Query hooks and cache keys
 │   └── query-client.ts   cache defaults
 ├── mocks/                MSW handlers + the fixture they serve
-├── data-structures/      the domain model: Finding, a discriminated union
+├── data-structures/      zod schemas; the types are inferred from them
 ├── store/                redux — client state only
 │   └── selection/        actionTypes · actions · reducer · selectors · types
 ├── components/           presentational + a .container.tsx that connects it
@@ -85,13 +90,24 @@ Two rules the layout enforces:
 2. **Server state and client state travel separately.** They reach a view down
    two different paths and neither knows about the other.
 
-## The domain model is a discriminated union
+## The domain model is a schema
 
-Modelling two shapes as one type with six optional fields would make every
-consumer guard against combinations that can never occur.
-`Finding = AbsoluteFinding | RadialFinding` lets the compiler prove which
-coordinates exist in each branch, and `isRadialFinding` is the single place that
-narrowing happens.
+The types are not written by hand. `src/data-structures/data.ts` defines zod
+schemas and derives the TypeScript types from them with `z.infer`, so the
+validator and the type are the same declaration — a field cannot be added to
+one and forgotten in the other.
+
+Findings arrive in two shapes. An absolute finding has `x`/`y`; a radial one
+has `hours`/`minutes`/`distanceFromCenter`. Modelling that as one type with six
+optional fields would make every consumer guard against combinations that can
+never occur, so it is a `z.discriminatedUnion` on `type`. That buys two things:
+the compiler proves which coordinates exist in each branch, and zod reports a
+failure against the matching branch rather than a union of every possible
+error. `isRadialFinding` is the one place that narrowing happens.
+
+Unknown keys are stripped rather than kept — the payload nests a `children`
+array of a type the application does not model, and carrying it forward would
+imply something renders it.
 
 ## The API layer
 
@@ -116,9 +132,19 @@ that is JSON but not the shape promised. Each has a test.
 **Validate.** The payload is not uniform. One finding carries `"y": "100"` as a
 string while every other uses numbers, several omit `note`, and one nests a
 `children` array of a third type the app does not model.
-`parse-findings.ts` normalises it: coordinates are coerced, unusable rows are
-dropped rather than thrown on — one bad finding should cost that finding, not
-the screen.
+
+The rules live in the schemas; `parse-findings.ts` owns the *policy*. It calls
+`safeParse` **per row** rather than parsing the array as a whole, because
+parsing the array would lose every finding to one bad element. A row that fails
+is dropped — one bad finding should cost that finding, not the screen.
+
+Coercion is explicit rather than `z.coerce.number()`, which accepts `null`,
+`""` and `true` and turns each into a number. `""` becoming `0` would silently
+place a finding in the top-left corner, which is worse than dropping the row.
+
+The response envelope has its own schema, where the counts `.catch()` a
+fallback instead of failing: a server that omits `totalPages` should leave the
+pager able to work it out, not take the page down.
 
 Identity comes from the payload's own `id`. It used to be assigned by position,
 which was fine while the whole list arrived at once; pagination broke that,
@@ -192,10 +218,21 @@ its own boundary, so one failing leaves the other readable.
 
 ## Testing
 
-`npm run verify` typechecks and runs 135 tests across 15 suites. Coverage is
-enforced at 90% by a `coverageThreshold`: a floor that fails the build when a
-change lands without the test that should have come with it — not a target to
-optimise.
+`npm run verify` typechecks and runs 135 tests across 15 suites in about six
+seconds. Coverage is enforced at 90% by a `thresholds` block: a floor that
+fails the build when a change lands without the test that should have come with
+it — not a target to optimise.
+
+The runner is **Vitest**, which matters more than it sounds. This suite ran on
+Jest first, and MSW v2 intercepts at the Fetch API level while jsdom ships no
+`fetch`, `Request`, `Response` or streams — so it needed a 40-line polyfill
+file, a `transformIgnorePatterns` regex listing every ESM-only package MSW
+pulls in, and a Babel transform for `node_modules`. One of those polyfills
+(`MessagePort`, which React's scheduler picks up as `MessageChannel`) made the
+suite pass every test and then hang forever.
+
+Vitest transforms with Vite, which is ESM-native, and supplies those primitives
+itself. All of that configuration is deleted, not replaced.
 
 The suites are deliberately different in kind:
 
@@ -223,7 +260,9 @@ The suites are deliberately different in kind:
 
 fabric.js is replaced by a recorder (`src/test/fabric-mock.ts`) because jsdom
 has no 2D context — and because the thing worth asserting is *what the
-component asks fabric to do*, not the pixels it would produce.
+component asks fabric to do*, not the pixels it would produce. The `vi.mock`
+factory returns that module directly, so the mock the component receives and
+the helpers the test reads it back through are the same instance.
 
 Test names state the behaviour and, where it is not obvious, a comment states
 why it matters. `keeps ids unique across pages, so brushing cannot confuse two
@@ -265,3 +304,6 @@ because it is the argument for the structure:
 - **Virtualise the table** if pages could ever be large.
 - **Prefetch the next page** on hover of the Next button; React Query has
   `prefetchQuery` and the cache key factory already supports it.
+- **Lazy-load the canvas.** fabric.js is most of the main bundle, and the table
+  alone is a usable view — `React.lazy` would defer it. MSW already
+  code-splits itself out via its dynamic import.

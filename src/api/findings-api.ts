@@ -10,9 +10,11 @@
  * is aware of that — it makes a real `fetch` and reads a real `Response`.
  */
 
+import { z } from "zod";
+
 import { ApiError } from "./api-error";
 import { parseFindings } from "./parse-findings";
-import type { Finding } from "../data-structures/data";
+import { toFiniteNumber, type Finding } from "../data-structures/data";
 
 export const FINDINGS_ENDPOINT = "/api/findings";
 export const DEFAULT_PAGE_SIZE = 8;
@@ -36,10 +38,27 @@ export interface FetchFindingsParams {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const toPositiveInt = (value: unknown, fallback: number) =>
-  typeof value === "number" && Number.isInteger(value) && value > 0
-    ? value
-    : fallback;
+const positiveInt = z.preprocess(
+  (value) => toFiniteNumber(value) ?? value,
+  z.number().int().positive()
+);
+
+/**
+ * The response envelope.
+ *
+ * Each count falls back rather than failing the whole response: a server that
+ * omits `totalPages` should leave the pager able to work it out, not take the
+ * page down. `items` is deliberately `unknown[]` — the rows are validated
+ * individually by `parseFindings`, so one malformed finding costs that finding
+ * rather than the page.
+ */
+const findingsPageSchema = z.object({
+  items: z.array(z.unknown()).catch([]),
+  page: positiveInt.optional(),
+  pageSize: positiveInt.optional(),
+  total: positiveInt.catch(0),
+  totalPages: positiveInt.optional(),
+});
 
 /**
  * Prefers the server's own explanation when it sent one. A body it cannot read
@@ -78,8 +97,10 @@ export const fetchFindingsPage = async ({
     response = await fetch(`${FINDINGS_ENDPOINT}?${query}`, { signal });
   } catch (originalError) {
     // An abort is React Query cancelling a superseded request, not a failure —
-    // rethrow it untouched so the query layer can recognise it.
-    if (originalError instanceof DOMException && originalError.name === "AbortError") {
+    // rethrow it untouched so the query layer can recognise it. Matched by
+    // name rather than `instanceof DOMException`, because Node's fetch throws
+    // a plain Error while browsers throw a DOMException.
+    if (originalError instanceof Error && originalError.name === "AbortError") {
       throw originalError;
     }
     throw new ApiError("Could not reach the server. Check your connection.", {
@@ -103,25 +124,25 @@ export const fetchFindingsPage = async ({
     });
   }
 
-  if (!isRecord(body)) {
+  const envelope = findingsPageSchema.safeParse(body);
+  if (!envelope.success) {
     throw new ApiError("The server sent a response we could not read.", {
       status: response.status,
+      originalError: envelope.error,
     });
   }
 
-  const resolvedPageSize = toPositiveInt(body.pageSize, pageSize);
-  const total = toPositiveInt(body.total, 0);
+  const resolvedPageSize = envelope.data.pageSize ?? pageSize;
+  const { total } = envelope.data;
 
   return {
-    findings: parseFindings(body.items),
-    page: toPositiveInt(body.page, page),
+    findings: parseFindings(envelope.data.items),
+    page: envelope.data.page ?? page,
     pageSize: resolvedPageSize,
     total,
     // Derived rather than trusted: a server that omits totalPages should not
     // leave the pager unable to count.
-    totalPages: toPositiveInt(
-      body.totalPages,
-      Math.max(1, Math.ceil(total / resolvedPageSize))
-    ),
+    totalPages:
+      envelope.data.totalPages ?? Math.max(1, Math.ceil(total / resolvedPageSize)),
   };
 };

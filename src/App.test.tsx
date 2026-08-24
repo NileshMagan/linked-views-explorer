@@ -1,10 +1,11 @@
-import React from "react";
+import { describe, expect, it, vi } from "vitest";
+
 import { fireEvent, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 
 import App from "./App";
 import { renderWithProviders } from "./test/test-utils";
 
-jest.mock("fabric", () => require("./test/fabric-mock"));
+vi.mock("fabric", () => import("./test/fabric-mock"));
 
 /**
  * The one integration test: a real store, a real query client, a real `fetch`

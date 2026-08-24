@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { act, render, screen } from "@testing-library/react";
 
 import Canvas from "./canvas";
 import { NO_SELECTION } from "../../store/selection/types";
@@ -10,12 +10,19 @@ import {
   CANVAS_CENTER,
 } from "../../constants/canvas-constants";
 import { makeAbsoluteFinding, makeRadialFinding } from "../../test/test-utils";
+import {
+  latestScene as scene,
+  resetFabricMock,
+  type FakeGroup,
+} from "../../test/fabric-mock";
+
+/** The dot is the first child of a marker group; its fill is the highlight. */
+const dotOf = (marker: unknown) => (marker as FakeGroup).getObjects()[0];
 
 // fabric is replaced with a recorder; see src/test/fabric-mock.ts for why.
-jest.mock("fabric", () => require("../../test/fabric-mock"));
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { latestScene: scene, resetFabricMock } = require("../../test/fabric-mock");
+// The factory returns that module itself, so the mock the component receives
+// and the helpers this test reads it back through are the same instance.
+vi.mock("fabric", () => import("../../test/fabric-mock"));
 
 const findings = [
   makeAbsoluteFinding({ id: 1, label: "Finding 1", x: 10, y: 20 }),
@@ -25,7 +32,7 @@ const findings = [
 const renderCanvas = (
   props: Partial<React.ComponentProps<typeof Canvas>> = {}
 ) => {
-  const onFindingHover = jest.fn();
+  const onFindingHover = vi.fn();
   const result = render(
     <Canvas
       findings={findings}
@@ -80,7 +87,7 @@ describe("Canvas", () => {
       <Canvas
         findings={[...findings]}
         selectedFindingId={NO_SELECTION}
-        onFindingHover={jest.fn()}
+        onFindingHover={vi.fn()}
       />
     );
 
@@ -121,8 +128,8 @@ describe("Canvas", () => {
     renderCanvas({ selectedFindingId: 2 });
 
     const [first, second] = scene().objects;
-    expect(first.getObjects!()[0].props.fill).toBe(FINDING_FILL);
-    expect(second.getObjects!()[0].props.fill).toBe(FINDING_FILL_SELECTED);
+    expect(dotOf(first).props.fill).toBe(FINDING_FILL);
+    expect(dotOf(second).props.fill).toBe(FINDING_FILL_SELECTED);
   });
 
   it("returns a marker to its resting colour when the selection moves on", () => {
@@ -132,13 +139,13 @@ describe("Canvas", () => {
       <Canvas
         findings={findings}
         selectedFindingId={1}
-        onFindingHover={jest.fn()}
+        onFindingHover={vi.fn()}
       />
     );
 
     const [first, second] = scene().objects;
-    expect(first.getObjects!()[0].props.fill).toBe(FINDING_FILL_SELECTED);
-    expect(second.getObjects!()[0].props.fill).toBe(FINDING_FILL);
+    expect(dotOf(first).props.fill).toBe(FINDING_FILL_SELECTED);
+    expect(dotOf(second).props.fill).toBe(FINDING_FILL);
   });
 
   it("disposes the fabric canvas on unmount", () => {

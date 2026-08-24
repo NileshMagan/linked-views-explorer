@@ -1,7 +1,8 @@
 // jest-dom's custom matchers: toBeInTheDocument, toHaveClass, and friends.
-import "@testing-library/jest-dom";
+import { afterAll, afterEach, beforeAll } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
-import { server } from "./mocks/server";
+import { server } from "../mocks/server";
 
 /**
  * The mock API runs for every test.

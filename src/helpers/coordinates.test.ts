@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { clockAngleInDegrees, radialToAbsolute } from "./coordinates";
 
 const CENTER = { x: 250, y: 250 };
