@@ -9,6 +9,11 @@
  *
  * Malformed entries are dropped rather than thrown on. One bad row in a list
  * of findings should cost that row, not the whole screen.
+ *
+ * Identity comes from the payload's own `id`. It used to be assigned by
+ * position, which was fine while the whole list arrived at once — but with
+ * pagination page two would restart at 1 and collide with page one, breaking
+ * the link between the two views.
  */
 
 import {
@@ -42,13 +47,21 @@ const toNote = (value: unknown): string | undefined =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** A usable id is a positive integer; anything else cannot identify a row. */
+const toId = (value: unknown): number | undefined => {
+  const id = toFiniteNumber(value);
+  return id !== undefined && Number.isInteger(id) && id > 0 ? id : undefined;
+};
+
 /**
  * Converts one raw payload entry into a `Finding`, or returns undefined if it
- * cannot be trusted. `id` is supplied by the caller because the payload has no
- * identifier and position in the list is the only stable ordering available.
+ * cannot be trusted.
  */
-export const parseFinding = (raw: unknown, id: number): Finding | undefined => {
+export const parseFinding = (raw: unknown): Finding | undefined => {
   if (!isRecord(raw)) return undefined;
+
+  const id = toId(raw.id);
+  if (id === undefined) return undefined;
 
   const label = toLabel(raw.label);
   if (!label) return undefined;
@@ -90,16 +103,15 @@ export const parseFinding = (raw: unknown, id: number): Finding | undefined => {
 };
 
 /**
- * Normalises a whole payload. IDs are 1-based and assigned after filtering, so
- * they stay contiguous even when a malformed row is dropped.
+ * Normalises a whole payload, dropping rows that cannot be rendered. The
+ * result may therefore be shorter than the page the server reported — which is
+ * the honest outcome, and why the page count comes from the server's `total`
+ * rather than from `items.length`.
  */
 export const parseFindings = (payload: unknown): Finding[] => {
   if (!Array.isArray(payload)) return [];
 
-  const findings: Finding[] = [];
-  payload.forEach((raw) => {
-    const finding = parseFinding(raw, findings.length + 1);
-    if (finding) findings.push(finding);
-  });
-  return findings;
+  return payload
+    .map(parseFinding)
+    .filter((finding): finding is Finding => finding !== undefined);
 };

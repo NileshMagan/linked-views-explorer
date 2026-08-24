@@ -1,0 +1,205 @@
+[
+  {
+    "id": 1,
+    "type": "absolute",
+    "x": 195,
+    "y": 107,
+    "label": "Finding 1",
+    "note": "Lorem ipsum dolor sit amet"
+  },
+  {
+    "id": 2,
+    "type": "absolute",
+    "x": 232,
+    "y": 363,
+    "label": "Finding 2",
+    "note": "Duis aute irure dolor in reprehenderit"
+  },
+  {
+    "id": 3,
+    "type": "absolute",
+    "x": 54,
+    "y": 67,
+    "label": "Finding 3",
+    "note": "Excepteur sint occaecat cupidatat non proident"
+  },
+  {
+    "id": 4,
+    "type": "absolute",
+    "x": 450,
+    "y": 304,
+    "label": "Finding 4",
+    "note": "Culpa qui officia deserunt mollit anim id est laborum"
+  },
+  {
+    "id": 5,
+    "type": "absolute",
+    "x": 78,
+    "y": 217,
+    "label": "Finding 5",
+    "note": "Ut enim ad minim veniam quis nostrud"
+  },
+  {
+    "id": 6,
+    "type": "absolute",
+    "x": 328,
+    "y": 59,
+    "label": "Finding 6"
+  },
+  {
+    "id": 7,
+    "type": "absolute",
+    "x": 289,
+    "y": 139,
+    "label": "Finding 7",
+    "note": "Sed do eiusmod tempor incididunt ut labore"
+  },
+  {
+    "id": 8,
+    "type": "absolute",
+    "x": 49,
+    "y": 74,
+    "label": "Finding 8"
+  },
+  {
+    "id": 9,
+    "type": "absolute",
+    "x": 252,
+    "y": 244,
+    "label": "Finding 9",
+    "note": "Lorem ipsum dolor sit amet"
+  },
+  {
+    "id": 10,
+    "type": "absolute",
+    "x": 65,
+    "y": 153,
+    "label": "Finding 10",
+    "note": "Duis aute irure dolor in reprehenderit"
+  },
+  {
+    "id": 11,
+    "type": "absolute",
+    "x": 76,
+    "y": 312,
+    "label": "Finding 11",
+    "note": "Excepteur sint occaecat cupidatat non proident"
+  },
+  {
+    "id": 12,
+    "type": "absolute",
+    "x": 247,
+    "y": 60,
+    "label": "Finding 12",
+    "note": "Culpa qui officia deserunt mollit anim id est laborum"
+  },
+  {
+    "id": 13,
+    "type": "absolute",
+    "x": 453,
+    "y": 319,
+    "label": "Finding 13",
+    "note": "Ut enim ad minim veniam quis nostrud"
+  },
+  {
+    "id": 14,
+    "type": "absolute",
+    "x": 93,
+    "y": 144,
+    "label": "Finding 14"
+  },
+  {
+    "id": 15,
+    "type": "absolute",
+    "x": 352,
+    "y": 351,
+    "label": "Finding 15",
+    "note": "Sed do eiusmod tempor incididunt ut labore"
+  },
+  {
+    "id": 16,
+    "type": "absolute",
+    "x": 328,
+    "y": 61,
+    "label": "Finding 16"
+  },
+  {
+    "id": 17,
+    "type": "radial",
+    "hours": 12,
+    "minutes": 0,
+    "distanceFromCenter": 60,
+    "label": "Radial 1",
+    "note": "Lorem ipsum dolor sit amet"
+  },
+  {
+    "id": 18,
+    "type": "radial",
+    "hours": 3,
+    "minutes": 30,
+    "distanceFromCenter": 100,
+    "label": "Radial 2",
+    "note": "Duis aute irure dolor in reprehenderit"
+  },
+  {
+    "id": 19,
+    "type": "radial",
+    "hours": 6,
+    "minutes": 0,
+    "distanceFromCenter": 140,
+    "label": "Radial 3",
+    "note": "Excepteur sint occaecat cupidatat non proident"
+  },
+  {
+    "id": 20,
+    "type": "radial",
+    "hours": 7,
+    "minutes": 0,
+    "distanceFromCenter": 40,
+    "label": "Radial 4",
+    "note": "Culpa qui officia deserunt mollit anim id est laborum"
+  },
+  {
+    "id": 21,
+    "type": "radial",
+    "hours": 9,
+    "minutes": 15,
+    "distanceFromCenter": 90,
+    "label": "Radial 5",
+    "note": "Ut enim ad minim veniam quis nostrud"
+  },
+  {
+    "id": 22,
+    "type": "radial",
+    "hours": 1,
+    "minutes": 45,
+    "distanceFromCenter": 120,
+    "label": "Radial 6"
+  },
+  {
+    "id": 23,
+    "type": "absolute",
+    "x": 200,
+    "y": "100",
+    "label": "Finding 17"
+  },
+  {
+    "id": 24,
+    "type": "absolute",
+    "x": 260,
+    "label": "Missing coordinate"
+  },
+  {
+    "id": 25,
+    "type": "relative",
+    "x": 10,
+    "y": 20,
+    "label": "Unmodelled type"
+  },
+  {
+    "id": 26,
+    "type": "absolute",
+    "x": 120,
+    "y": 300
+  }
+]

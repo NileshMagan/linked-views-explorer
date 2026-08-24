@@ -2,7 +2,7 @@ import React, { type FC } from "react";
 import classnames from "classnames";
 
 import "./table.scss";
-import { NO_SELECTION } from "../../store/findings/types";
+import { NO_SELECTION } from "../../store/selection/types";
 import type { FindingsViewProps } from "../shared-props/findings";
 
 /**

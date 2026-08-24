@@ -1,21 +1,22 @@
 /**
  * Shared test helpers.
  *
- * Two things live here: a way to render a connected component against a real
- * store, and factories for building findings. The factories matter more than
- * they look — a test that spells out a whole finding inline buries the one
- * field it actually cares about, so these default everything and let each test
- * override only what it is testing.
+ * Three things live here: a way to render against real providers, factories
+ * for building findings, and a query client tuned for tests. The factories
+ * matter more than they look — a test that spells out a whole finding inline
+ * buries the one field it actually cares about, so these default everything
+ * and let each test override only what it is testing.
  */
 
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, type ReactNode } from "react";
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, type Store } from "redux";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import rootReducer, { type AppState } from "../store/reducers/rootReducers";
-import { initialState as findingsInitialState } from "../store/findings/reducer";
-import type { FindingsState } from "../store/findings/types";
+import { initialState as selectionInitialState } from "../store/selection/reducer";
+import type { SelectionState } from "../store/selection/types";
 import {
   FINDING_ABSOLUTE_TYPE,
   FINDING_RADIAL_TYPE,
@@ -48,27 +49,53 @@ export const makeRadialFinding = (
   ...overrides,
 });
 
-/** A real store, not a mock, so `connect` and the selectors are exercised too. */
+/** A real store, not a mock, so `connect` and the selectors are exercised. */
 export const makeTestStore = (
-  findings: Partial<FindingsState> = {}
+  selection: Partial<SelectionState> = {}
 ): Store<AppState> =>
   createStore(rootReducer, {
-    findings: { ...findingsInitialState, ...findings },
+    selection: { ...selectionInitialState, ...selection },
   });
 
-interface RenderWithStoreOptions extends Omit<RenderOptions, "wrapper"> {
+/**
+ * Retries are disabled: a test that exercises the failure path should fail
+ * once and be done, not wait through the production retry schedule.
+ */
+export const makeTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+    },
+  });
+
+interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
   store?: Store<AppState>;
-  findings?: Partial<FindingsState>;
+  selection?: Partial<SelectionState>;
+  queryClient?: QueryClient;
 }
 
-export const renderWithStore = (
+export const renderWithProviders = (
   ui: ReactElement,
-  { store, findings, ...options }: RenderWithStoreOptions = {}
-): RenderResult & { store: Store<AppState> } => {
-  const testStore = store ?? makeTestStore(findings);
-  const result = render(ui, {
-    wrapper: ({ children }) => <Provider store={testStore}>{children}</Provider>,
-    ...options,
-  });
-  return { ...result, store: testStore };
+  { store, selection, queryClient, ...options }: RenderWithProvidersOptions = {}
+): RenderResult & { store: Store<AppState>; queryClient: QueryClient } => {
+  const testStore = store ?? makeTestStore(selection);
+  const testQueryClient = queryClient ?? makeTestQueryClient();
+
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={testQueryClient}>
+      <Provider store={testStore}>{children}</Provider>
+    </QueryClientProvider>
+  );
+
+  return {
+    ...render(ui, { wrapper, ...options }),
+    store: testStore,
+    queryClient: testQueryClient,
+  };
 };
+
+/** For hooks that need the query cache but no store. */
+export const queryWrapper = (queryClient: QueryClient) =>
+  ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );

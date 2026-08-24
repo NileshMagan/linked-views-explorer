@@ -1,42 +1,61 @@
 .App {
-    padding: 20px;
-    background: rgb(2, 0, 0);
-    width: 100vw;
-    height: 100vh;
-    color: white;
-  }
-  
-  .CanvasWrapper {
-    background: rgb(2, 0, 0);
-    border: 1px solid #ddd;
-    width: 500px;
-    height: 500px;
-  }
-  
-  .content-container {
-    display: flex;
+  min-height: 100vh;
+  padding: 20px;
+  background: rgb(2, 0, 0);
+  color: white;
+}
 
-    div {
-        margin: 10px;
-    }
-  }
-  
-  .Error {
-    padding: 16px;
-    border: 1px solid #b91c1c;
-    border-radius: 4px;
-    background: #2a0000;
+.CanvasWrapper {
+  width: 500px;
+  height: 500px;
+  background: rgb(2, 0, 0);
+  border: 1px solid #ddd;
+}
 
-    button {
-      margin-top: 8px;
-      padding: 6px 12px;
-      cursor: pointer;
-    }
-  }
+// The page stacks: the two linked views, then the pager, then the readout.
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
 
-  .SelectedFinding {
-    align-self: flex-start;
-    padding: 8px 12px;
-    font-family: monospace;
-    color: #93c5fd;
+// The views themselves sit side by side, because comparing them is the point.
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+
+  // Dimmed while a newer page is in flight, so the page still on screen is not
+  // mistaken for the one that was asked for.
+  &[data-stale] {
+    opacity: 0.5;
+    transition: opacity 120ms ease-in;
   }
+}
+
+.Table {
+  flex: 1 1 320px;
+  min-width: 320px;
+}
+
+.Error {
+  padding: 16px;
+  border: 1px solid #b91c1c;
+  border-radius: 4px;
+  background: #2a0000;
+
+  button {
+    margin-top: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+}
+
+.SelectedFinding {
+  padding: 4px 0;
+  font-family: monospace;
+  color: #93c5fd;
+}

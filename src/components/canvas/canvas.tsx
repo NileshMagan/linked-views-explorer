@@ -11,7 +11,7 @@ import {
 } from "../../constants/canvas-constants";
 import { radialToAbsolute } from "../../helpers/coordinates";
 import { isRadialFinding, type Finding } from "../../data-structures/data";
-import { NO_SELECTION } from "../../store/findings/types";
+import { NO_SELECTION } from "../../store/selection/types";
 import type { FindingsViewProps } from "../shared-props/findings";
 
 /** Where a finding sits on the canvas, whichever way it described itself. */

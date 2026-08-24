@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 
 import Canvas from "./canvas";
-import { NO_SELECTION } from "../../store/findings/types";
+import { NO_SELECTION } from "../../store/selection/types";
 import {
   FINDING_FILL,
   FINDING_FILL_SELECTED,

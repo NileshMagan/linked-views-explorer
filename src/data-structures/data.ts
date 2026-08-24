@@ -41,3 +41,15 @@ export type Finding = AbsoluteFinding | RadialFinding;
  */
 export const isRadialFinding = (finding: Finding): finding is RadialFinding =>
   finding.type === FINDING_RADIAL_TYPE;
+
+/**
+ * Resolves a brushed id to the finding it names, or undefined when nothing is
+ * brushed or the id refers to a finding that is no longer on the page.
+ *
+ * Lives here rather than in a selector because the findings are React Query's,
+ * not Redux's — the store holds only the id.
+ */
+export const findFindingById = (
+  findings: readonly Finding[],
+  id: number
+): Finding | undefined => findings.find((finding) => finding.id === id);

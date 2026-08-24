@@ -3,11 +3,11 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import Table from "./table";
 import TableContainer from "./table.container";
-import { NO_SELECTION } from "../../store/findings/types";
+import { NO_SELECTION } from "../../store/selection/types";
 import {
   makeAbsoluteFinding,
   makeRadialFinding,
-  renderWithStore,
+  renderWithProviders,
 } from "../../test/test-utils";
 
 const findings = [
@@ -109,25 +109,26 @@ describe("Table", () => {
 });
 
 describe("Table container", () => {
-  it("takes its findings from the store", () => {
-    renderWithStore(<TableContainer />, { findings: { findings } });
+  // Findings arrive as a prop from the page, which owns the query; only the
+  // selection comes from the store. The container is where those two paths
+  // meet, so this is the seam worth testing.
+  it("renders the findings it is given", () => {
+    renderWithProviders(<TableContainer findings={findings} />);
 
     expect(screen.getAllByRole("row")).toHaveLength(2);
   });
 
   it("dispatches the hovered finding into the store", () => {
-    const { store } = renderWithStore(<TableContainer />, {
-      findings: { findings },
-    });
+    const { store } = renderWithProviders(<TableContainer findings={findings} />);
 
     fireEvent.mouseEnter(screen.getByTestId("finding-row-2"));
 
-    expect(store.getState().findings.selectedFindingId).toBe(2);
+    expect(store.getState().selection.selectedFindingId).toBe(2);
   });
 
   it("highlights the row the store says is selected", () => {
-    renderWithStore(<TableContainer />, {
-      findings: { findings, selectedFindingId: 1 },
+    renderWithProviders(<TableContainer findings={findings} />, {
+      selection: { selectedFindingId: 1 },
     });
 
     expect(screen.getByTestId("finding-row-1")).toHaveClass("highlighted");

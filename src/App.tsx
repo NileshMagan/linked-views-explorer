@@ -5,9 +5,8 @@ import ErrorBoundary from "./components/error-boundary/error-boundary";
 import Main from "./pages/main/main.container";
 
 /**
- * The shell. Data loading belongs to the page, which is connected and can
- * actually dispatch — the previous version called the action creator here and
- * discarded the resulting object without ever reaching the store.
+ * The shell. Providers are mounted in `index.tsx` so this stays renderable in
+ * a test with whichever providers that test actually needs.
  */
 const App: React.FC = () => (
   <div className="App">

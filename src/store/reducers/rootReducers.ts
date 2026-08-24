@@ -1,9 +1,9 @@
 import { combineReducers } from "redux";
 
-import findingsReducer from "../findings/reducer";
+import selectionReducer from "../selection/reducer";
 
 const rootReducer = combineReducers({
-  findings: findingsReducer
+  selection: selectionReducer,
 });
 
 export type AppState = ReturnType<typeof rootReducer>;
