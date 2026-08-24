@@ -1,148 +1,162 @@
-import React, { useEffect, useState, useRef, FC, useMemo } from "react";
+import React, { useEffect, useRef, useState, type FC } from "react";
 import { fabric } from "fabric";
-import { CANVAS_CENTER, CANVAS_HEIGHT, CANVAS_WIDTH } from "../../constants/canvas-constants";
-import { usePrevious } from "../../helpers/hook-helpers";
-import { FINDING_RADIAL_TYPE } from "../../constants/data-constants";
-import { Props } from "../shared-props/findings";
 
-const Canvas: FC<Props> = ({ 
+import {
+  CANVAS_CENTER,
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  FINDING_FILL,
+  FINDING_FILL_SELECTED,
+  FINDING_RADIUS,
+} from "../../constants/canvas-constants";
+import { radialToAbsolute } from "../../helpers/coordinates";
+import { isRadialFinding, type Finding } from "../../data-structures/data";
+import { NO_SELECTION } from "../../store/findings/types";
+import type { FindingsViewProps } from "../shared-props/findings";
+
+/** Where a finding sits on the canvas, whichever way it described itself. */
+const positionOf = (finding: Finding) =>
+  isRadialFinding(finding)
+    ? radialToAbsolute(
+        finding.hours,
+        finding.minutes,
+        finding.distanceFromCenter,
+        CANVAS_CENTER
+      )
+    : { x: finding.x, y: finding.y };
+
+/**
+ * Builds the marker for one finding: a dot, its label, and the finding's id
+ * carried on the group itself. Storing the id as data rather than as a hidden
+ * text child means hover can read it back directly instead of parsing it out
+ * of the group's third item.
+ */
+const createMarker = (finding: Finding): fabric.Group => {
+  const { x, y } = positionOf(finding);
+
+  const dot = new fabric.Circle({
+    radius: FINDING_RADIUS,
+    fill: FINDING_FILL,
+    left: 0,
+    top: 0,
+  });
+
+  const label = new fabric.Text(finding.label, {
+    fontFamily: "Arial",
+    fontSize: 12,
+    fill: "yellow",
+    left: FINDING_RADIUS * 2 + 4,
+    top: 0,
+  });
+
+  const marker = new fabric.Group([dot, label], {
+    left: x,
+    top: y,
+    selectable: false,
+    hasBorders: false,
+    hasControls: false,
+    hoverCursor: "pointer",
+  });
+
+  marker.set("data", { findingId: finding.id });
+  return marker;
+};
+
+const findingIdOf = (target?: fabric.Object): number => {
+  const data = target?.get("data") as { findingId?: number } | undefined;
+  return data?.findingId ?? NO_SELECTION;
+};
+
+/**
+ * The canvas view of the findings.
+ *
+ * fabric owns imperative objects that live outside React's tree, so this
+ * component is a thin adapter: effects push declarative props into the fabric
+ * scene, and every effect cleans up what it created.
+ */
+const Canvas: FC<FindingsViewProps> = ({
   findings,
-  selectedFinding, 
-  itemSelectedHandler 
+  selectedFindingId,
+  onFindingHover,
 }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [techTaskCanvas, setTechTaskCanvas] = useState<fabric.Canvas | null>(null);      
-    const prevFinding = usePrevious( selectedFinding );
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [scene, setScene] = useState<fabric.Canvas | null>(null);
+  // Hover fires on every mouse move; keeping the callback in a ref lets the
+  // fabric listeners be attached once instead of being torn down and rebound
+  // whenever the parent re-renders with a new closure.
+  const onFindingHoverRef = useRef(onFindingHover);
+  onFindingHoverRef.current = onFindingHover;
 
-    useMemo(() => {
-      if (!techTaskCanvas)
-        return;
+  useEffect(() => {
+    if (!canvasRef.current) return undefined;
 
-      techTaskCanvas!.on('mouse:over', function(e) {
-        try {
-          const indexObject = (e.target! as fabric.Group).item(2);
-          const index = parseInt((indexObject as unknown as fabric.Text)!.text!);
+    const created = new fabric.Canvas(canvasRef.current, {
+      selection: false,
+    });
+    setScene(created);
 
-          itemSelectedHandler(index + 1);
-        } catch (e: any) {
-          return;
-        }
+    return () => {
+      setScene(null);
+      created.dispose();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!scene) return undefined;
+
+    const handleOver = (event: fabric.IEvent) =>
+      onFindingHoverRef.current(findingIdOf(event.target));
+    const handleOut = () => onFindingHoverRef.current(NO_SELECTION);
+
+    scene.on("mouse:over", handleOver);
+    scene.on("mouse:out", handleOut);
+
+    return () => {
+      scene.off("mouse:over", handleOver);
+      scene.off("mouse:out", handleOut);
+    };
+  }, [scene]);
+
+  // Redrawing clears first: without it a second render of the same findings
+  // stacks a duplicate set of markers on top of the originals.
+  useEffect(() => {
+    if (!scene) return;
+
+    scene.clear();
+    findings.forEach((finding) => scene.add(createMarker(finding)));
+    scene.renderAll();
+  }, [scene, findings]);
+
+  // Highlighting is a repaint, not a rebuild, so it is a separate effect from
+  // the one that creates the markers.
+  useEffect(() => {
+    if (!scene) return;
+
+    scene.getObjects().forEach((marker) => {
+      const dot = (marker as fabric.Group).getObjects?.()[0];
+      dot?.set({
+        fill:
+          findingIdOf(marker) === selectedFindingId
+            ? FINDING_FILL_SELECTED
+            : FINDING_FILL,
       });
-    
-      techTaskCanvas!.on('mouse:out', function(e) {
-        itemSelectedHandler(0);
-      });
-    }, [techTaskCanvas, itemSelectedHandler]);
+    });
+    scene.renderAll();
+  }, [scene, selectedFindingId, findings]);
 
-    useEffect(() => {
-      const options = {};
-      const canvas = new fabric.Canvas(canvasRef.current, options);
-      setTechTaskCanvas(canvas);
-  
-      return () => {
-        setTechTaskCanvas(null);
-        canvas.dispose();
-      };
-    }, []);
-
-    const covertRadialToAbsolute = (hours: number, minutes: number, distanceFromCenter: number) => {
-      // Convert hours + minutes to angle
-      const degrees = ((hours/12) * 360) + ((minutes/60) * 30);
-      const radians = degrees * (Math.PI / 180);
-      return {
-        x: CANVAS_CENTER.x + distanceFromCenter * Math.cos(radians),
-        y: CANVAS_CENTER.y + distanceFromCenter * Math.sin(radians)
-      }
-    }
-
-    const generateFinding = (x: number, y: number, label: string, index: number) : any => {
-      const circle = new fabric.Circle({
-        radius: 10,
-        fill: "red",
-        left: 0,
-        top: 0,
-        selectable: false,
-        hasBorders: false,
-        hasControls: false,
-      });
-
-      const text = new fabric.Text(label, {
-        fontFamily: "Arial",
-        fontSize: 12,
-        fill: "yellow",
-        left: 24,
-        top: 0,
-        selectable: false,
-        hasBorders: false,
-        hasControls: false,
-      });
-
-      const indexHolder = new fabric.Text(index.toString(), {
-        visible: false
-      });
-
-      return new fabric.Group([circle, text, indexHolder], {
-        left: x,
-        top: y,
-        selectable: false,
-        hasBorders: false,
-        hasControls: false,
-      });
-    } 
-
-    useEffect(() => {
-      findings.forEach(({ type, x, y, label, hours, minutes, distanceFromCenter }: any, index: number) => {
-        if (!techTaskCanvas) {
-          return;
-        }
-        
-        let absolutePositioning = { x, y }; 
-
-        if (type === FINDING_RADIAL_TYPE) {
-          absolutePositioning = covertRadialToAbsolute(hours, minutes, distanceFromCenter);
-        }
-
-        const finding = generateFinding(absolutePositioning.x, absolutePositioning.y, label, index);
-        
-        techTaskCanvas.add(finding);
-      });
-      
-    }, [findings, techTaskCanvas]);
-
-    useEffect(() => {
-      if (techTaskCanvas == null) {
-        return;
-      }      
-
-      try {
-        if (prevFinding) {
-          techTaskCanvas.item(prevFinding - 1).getObjects().at(0)?.set({
-            fill: "red"
-          });
-        }
-
-        if (selectedFinding) {
-          techTaskCanvas.item(selectedFinding - 1).getObjects().at(0)?.set({
-            fill: "blue"
-          });
-        }
-
-        techTaskCanvas.renderAll();
-      } catch (e: any) {
-
-      }
-    }, [selectedFinding, prevFinding, techTaskCanvas]);
-  
-    return (
-      <div className="Canvas">
-        <div>
-          <h2>Canvas</h2>
-          <div className="CanvasWrapper">
-            <canvas width={CANVAS_WIDTH} height={CANVAS_HEIGHT} ref={canvasRef} />
-          </div>
-        </div>
+  return (
+    <div className="Canvas">
+      <h2>Canvas</h2>
+      <div className="CanvasWrapper">
+        <canvas
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          ref={canvasRef}
+          data-testid="findings-canvas"
+        />
       </div>
-    );
-  };
-  
-  export default Canvas;
+    </div>
+  );
+};
+
+export default Canvas;

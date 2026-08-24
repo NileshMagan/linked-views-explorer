@@ -1,15 +1,24 @@
-import { connect } from 'react-redux';
-import { getFindingsSelector } from '../../store/findings/selectors';
-import { fetchFindingsRequest, setSelectedFinding, setSelectedFindingId } from "../../store/findings/actions";
+import { connect } from "react-redux";
 
-import Main from './main';
+import { fetchFindingsRequest } from "../../store/findings/actions";
+import {
+  getErrorSelector,
+  getIsEmptySelector,
+  getPendingSelector,
+  getSelectedFindingSelector,
+} from "../../store/findings/selectors";
+import type { AppState } from "../../store/reducers/rootReducers";
+import Main from "./main";
 
-const mapStateToProps = (state: any) => ({
+const mapStateToProps = (state: AppState) => ({
+  pending: getPendingSelector(state),
+  error: getErrorSelector(state),
+  isEmpty: getIsEmptySelector(state),
+  selectedFinding: getSelectedFindingSelector(state),
 });
- 
+
 const mapDispatchToProps = {
-    fetchData: fetchFindingsRequest,
-    setSelectedFindingId: setSelectedFindingId
+  fetchFindings: fetchFindingsRequest,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Main);

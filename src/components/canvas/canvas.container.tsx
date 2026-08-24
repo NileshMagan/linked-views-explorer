@@ -1,15 +1,20 @@
-import { connect } from 'react-redux';
-import { getFindingsSelector, getSelectedFindingSelector } from '../../store/findings/selectors';
-import { FindingsState } from "../../store/findings/types";
+import { connect } from "react-redux";
 
-import Canvas from './canvas';
+import { setSelectedFindingId } from "../../store/findings/actions";
+import {
+  getFindingsSelector,
+  getSelectedFindingIdSelector,
+} from "../../store/findings/selectors";
+import type { AppState } from "../../store/reducers/rootReducers";
+import Canvas from "./canvas";
 
-const mapStateToProps = (state: any) => ({
-    findings: getFindingsSelector(state), 
-    selectedFinding: getSelectedFindingSelector(state) 
+const mapStateToProps = (state: AppState) => ({
+  findings: getFindingsSelector(state),
+  selectedFindingId: getSelectedFindingIdSelector(state),
 });
- 
+
 const mapDispatchToProps = {
+  onFindingHover: setSelectedFindingId,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Canvas);

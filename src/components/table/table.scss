@@ -1,3 +1,29 @@
-.highlighted {
-    color: blue;
+.FindingsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  tr {
+    cursor: pointer;
+    outline: none;
+
+    // The highlight has to survive being read at a glance while the pointer is
+    // on the *other* view, so it is a background change rather than a text
+    // colour: blue-on-black was almost invisible.
+    &.highlighted td {
+      background: #1d4ed8;
+      color: #fff;
+    }
+
+    // Keyboard focus gets a visible ring of its own; relying on the hover
+    // style alone would leave a focused row indistinguishable from a hovered
+    // one for anyone tabbing through.
+    &:focus-visible td {
+      box-shadow: inset 0 0 0 2px #93c5fd;
+    }
+  }
+
+  td {
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+  }
 }
